@@ -21,12 +21,43 @@
 
 #define CPU_MASK(cpu)	(1U << (cpu))
 
+<<<<<<< HEAD
 /*
  * For MSM8996 (big.LITTLE). CPU0 and CPU1 are LITTLE CPUs; CPU2 and CPU3 are
  * big CPUs.
  */
 #define LITTLE_CPU_MASK	(CPU_MASK(0) | CPU_MASK(1))
 #define BIG_CPU_MASK	(CPU_MASK(2) | CPU_MASK(3))
+=======
+#ifdef CONFIG_DYNAMIC_STUNE_BOOST
+static unsigned short dynamic_stune_boost;
+module_param(dynamic_stune_boost, short, 0644);
+#endif
+
+module_param(input_boost_freq_lp, uint, 0644);
+module_param(input_boost_freq_hp, uint, 0644);
+module_param(input_boost_duration, short, 0644);
+
+/* Available bits for boost_drv state */
+#define SCREEN_AWAKE		(1U << 0)
+#define INPUT_BOOST		(1U << 1)
+#define WAKE_BOOST		(1U << 2)
+#define MAX_BOOST		(1U << 3)
+
+struct boost_drv {
+	struct workqueue_struct *wq;
+	struct work_struct input_boost;
+	struct delayed_work input_unboost;
+	struct work_struct max_boost;
+	struct delayed_work max_unboost;
+	struct notifier_block cpu_notif;
+	struct notifier_block fb_notif;
+	unsigned long max_boost_expires;
+	atomic_t max_boost_dur;
+	spinlock_t lock;
+	u32 state;
+};
+>>>>>>> ffbff9e57c16... cpu_input_boost: Implement Dynamic SchedTune Boost v3
 
 /* Available bits for boost_policy state */
 #define DRIVER_ENABLED	(1U << 0)
@@ -195,14 +226,34 @@ static void ib_reboost_main(struct work_struct *work)
 		queue_delayed_work(b->wq, &pcpu->unboost_work,
 			msecs_to_jiffies(ib->adj_duration_ms));
 
+<<<<<<< HEAD
 	/* Clear reboost bit */
 	clear_boost_bit(b, INPUT_REBOOST);
+=======
+#ifdef CONFIG_DYNAMIC_STUNE_BOOST
+	do_stune_boost("top-app", dynamic_stune_boost);
+#endif
+	queue_delayed_work(b->wq, &b->input_unboost,
+		msecs_to_jiffies(input_boost_duration));
+>>>>>>> ffbff9e57c16... cpu_input_boost: Implement Dynamic SchedTune Boost v3
 }
 
 static void fb_boost_main(struct work_struct *work)
 {
+<<<<<<< HEAD
 	struct boost_policy *b = boost_policy_g;
 	struct fb_policy *fb = &b->fb;
+=======
+	struct boost_drv *b =
+		container_of(to_delayed_work(work), typeof(*b), input_unboost);
+
+	clear_boost_bit(b, INPUT_BOOST);
+#ifdef CONFIG_DYNAMIC_STUNE_BOOST
+	reset_stune_boost("top-app");
+#endif
+	update_online_cpu_policy();
+}
+>>>>>>> ffbff9e57c16... cpu_input_boost: Implement Dynamic SchedTune Boost v3
 
 	/* All CPUs will be boosted to policy->max */
 	set_boost_bit(b, WAKE_BOOST);
@@ -210,8 +261,16 @@ static void fb_boost_main(struct work_struct *work)
 	/* Immediately boost the online CPUs */
 	update_online_cpu_policy();
 
+<<<<<<< HEAD
 	queue_delayed_work(b->wq, &fb->unboost_work,
 				msecs_to_jiffies(FB_BOOST_MS));
+=======
+#ifdef CONFIG_DYNAMIC_STUNE_BOOST
+	do_stune_boost("top-app", dynamic_stune_boost);
+#endif
+	queue_delayed_work(b->wq, &b->max_unboost,
+		msecs_to_jiffies(atomic_read(&b->max_boost_dur)));
+>>>>>>> ffbff9e57c16... cpu_input_boost: Implement Dynamic SchedTune Boost v3
 }
 
 static void fb_unboost_main(struct work_struct *work)
@@ -219,9 +278,17 @@ static void fb_unboost_main(struct work_struct *work)
 	struct boost_policy *b = boost_policy_g;
 	struct ib_config *ib = &b->ib;
 
+<<<<<<< HEAD
 	/* Clear wake boost bit */
 	clear_boost_bit(b, WAKE_BOOST);
 	unboost_all_cpus(ib);
+=======
+	clear_boost_bit(b, WAKE_BOOST | MAX_BOOST);
+#ifdef CONFIG_DYNAMIC_STUNE_BOOST
+	reset_stune_boost("top-app");
+#endif
+	update_online_cpu_policy();
+>>>>>>> ffbff9e57c16... cpu_input_boost: Implement Dynamic SchedTune Boost v3
 }
 
 static int do_cpu_boost(struct notifier_block *nb,
@@ -378,6 +445,9 @@ err2:
 
 static void cpu_ib_input_disconnect(struct input_handle *handle)
 {
+#ifdef CONFIG_DYNAMIC_STUNE_BOOST
+	reset_stune_boost("top-app");
+#endif
 	input_close_device(handle);
 	input_unregister_handle(handle);
 	kfree(handle);
