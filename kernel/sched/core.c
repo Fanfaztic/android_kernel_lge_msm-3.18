@@ -1269,12 +1269,28 @@ static inline unsigned long load_scale_cpu_freq(struct sched_cluster *cluster)
 			   cluster_max_freq(cluster));
 }
 
+
 static int compute_capacity(struct sched_cluster *cluster)
+static const struct cpumask *get_adjusted_cpumask(const struct task_struct *p,
+	const struct cpumask *req_mask)
+{
+	/* Force all performance-critical kthreads onto the big cluster */
+	if (p->flags & PF_PERF_CRITICAL)
+		return cpu_perf_mask;
+
+	return req_mask;
+}
+
+void do_set_cpus_allowed(struct task_struct *p, const struct cpumask *new_mask)
+
 {
 	int capacity = 1024;
 
 	capacity *= capacity_scale_cpu_efficiency(cluster);
 	capacity >>= 10;
+	new_mask = get_adjusted_cpumask(p, new_mask);
+
+	lockdep_assert_held(&p->pi_lock);
 
 	capacity *= capacity_scale_cpu_freq(cluster);
 	capacity >>= 10;
@@ -4033,6 +4049,9 @@ static void add_new_task_to_grp(struct task_struct *new)
 		return;
 
 	parent = new->group_leader;
+	new_mask = get_adjusted_cpumask(p, new_mask);
+
+	rq = task_rq_lock(p, &flags);
 
 	/*
 	 * The parent's pi_lock is required here to protect race
