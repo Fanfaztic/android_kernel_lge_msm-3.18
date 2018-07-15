@@ -409,6 +409,7 @@ KBUILD_CFLAGS   := -Wall -Wundef -Wstrict-prototypes -Wno-trigraphs \
 		   -Wno-format-security \
 		   -Wno-unused-function \
 		   -Wno-array-bounds \
+		   -Wno-autological-compare
 		   -std=gnu89
 
 ifneq ($(KBUILD_SRC),)
