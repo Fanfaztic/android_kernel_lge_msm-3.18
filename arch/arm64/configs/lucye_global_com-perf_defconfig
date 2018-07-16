@@ -1,2 +1,5 @@
 include lucye_global_com_common
 include lucye_common-perf
+CONFIG_CPU_FREQ_GOV_ELEMENTALX=y
+CONFIG_CPU_FREQ_GOV_ZZMOOVE=y
+CONFIG_CPU_FREQ_GOV_INTERACTIVEX=y

@@ -144,21 +144,25 @@ config CPU_FREQ_DEFAULT_GOV_SCHEDUTIL
 config CPU_FREQ_DEFAULT_GOV_ELEMENTALX
 	bool "elementalx"
 	select CPU_FREQ_GOV_ELEMENTALX
-	select CPU_FREQ_GOV_PERFORMANCE
+	select CPU_FREQ_GOV_PERFOMANCE
 	help
 	  Use the CPUFreq governor 'elementalx' as default.
 
 config CPU_FREQ_DEFAULT_GOV_ZZMOOVE
 	bool "zzmoove"
 	select CPU_FREQ_GOV_ZZMOOVE
-	select CPU_FREQ_GOV_PERFORMANCE
+	select CPU_FREQ_GOV_PERFOMANCE
 	help
 	  Use the CPUFreq governor 'zzmoove' as default, using predefined
 	  frequency lookup tables and optimized scaling triggers instead of
 	  % frequency steps to get smooth up/downscaling dependant on CPU load.
 
->>>>>>> ae43107... add zzmoove big.LITTLE Edition
-
+config CPU_FREQ_DEFAULT_GOV_INTERACTIVEX
+	bool "interactivex"
+	select CPU_FREQ_GOV_INTERACTIVEX
+	help
+	
+	
 config CPU_FREQ_GOV_PERFORMANCE
 	tristate "'performance' governor"
 	help
@@ -274,6 +278,10 @@ config CPU_FREQ_GOV_CONSERVATIVE
 	  For details, take a look at linux/Documentation/cpu-freq.
 
 	  If in doubt, say N.
+config CPU_FREQ_GOV_INTERACTIVEX
+	tristate "'interactivex' cpufreq policy governor"
+	help
+	  'interactivex' - Modified version of interactive with sleep+wake code.
 
 config CPU_FREQ_GOV_SCHED
 	bool "'sched' cpufreq governor"
