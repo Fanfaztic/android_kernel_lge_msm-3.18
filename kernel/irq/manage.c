@@ -1340,6 +1340,7 @@ __setup_irq(unsigned int irq, struct irq_desc *desc, struct irqaction *new)
 		}
 
 		/* Set default affinity mask once everything is setup */
+		setup_affinity(irq, desc, mask);
 		if (new->flags & IRQF_PERF_CRITICAL) {
 			add_desc_to_perf_list(desc);
 			irqd_set(&desc->irq_data, IRQD_AFFINITY_MANAGED);
@@ -1348,7 +1349,6 @@ __setup_irq(unsigned int irq, struct irq_desc *desc, struct irqaction *new)
 		} else {
 			setup_affinity(desc, mask);
 		}
-
 	} else if (new->flags & IRQF_TRIGGER_MASK) {
 		unsigned int nmsk = new->flags & IRQF_TRIGGER_MASK;
 		unsigned int omsk = irq_settings_get_trigger_mask(desc);
@@ -1433,9 +1433,7 @@ int setup_irq(unsigned int irq, struct irqaction *act)
 	struct irq_desc *desc = irq_to_desc(irq);
 
 	if (WARN_ON(irq_settings_is_per_cpu_devid(desc)))
-
-	return -EINVAL;
-
+		return -EINVAL;
 	chip_bus_lock(desc);
 	retval = __setup_irq(irq, desc, act);
 	chip_bus_sync_unlock(desc);
